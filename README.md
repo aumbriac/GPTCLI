@@ -2,7 +2,7 @@
 
 **This project is not affiliated with OpenAI.**
 
-This command-line tool provides a simple interface for interacting with:
+This command-line tool provides a simple interface for interacting with the following OpenAI models:
 
 - GPT-3.5 Turbo
 - GPT-4
