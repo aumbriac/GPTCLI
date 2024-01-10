@@ -14,27 +14,27 @@ This command-line tool provides a simple interface for interacting with:
 
 ### Obtain an OpenAI API Key
 
-1. Get an OpenAI API key from [OpenAI's Official API Site](https://openai.com/api/).
-2. Add the API key to your shell environment by appending this line to `~/.bashrc` (or `~/.bash_profile` on Mac): `export OPENAI_API_KEY=your-api-key`.
+1. Get an OpenAI API key from [https://openai.com/api/](https://openai.com/api/).
+2. Add the API key to your shell environment by appending this line to `~/.bashrc` (or `~/.bash_profile` on Mac): `export OPENAI_API_KEY=your-api-key`
 3. Apply the changes by restarting your shell or sourcing your profile: `source ~/.bashrc  # or source ~/.bash_profile on Mac`
 
 ## Installation Steps
 
-1. Clone the GPTCLI repository: `git clone https://github.com/aumbriac/GPTCLI`.
-2. Go to the directory: `cd GPTCLI`.
-3. Test the CLI using Cargo: `cargo run What is the meaning of life?` or `cargo run <image_path> [optional_prompt]`.
-4. Build the CLI: `cargo build --release`.
+1. Clone the GPTCLI repository: `git clone https://github.com/aumbriac/GPTCLI`
+2. Go to the directory: `cd GPTCLI`
+3. Test the CLI using Cargo: `cargo run What is the meaning of life?` or `cargo run <image_path> [optional_prompt]`
+4. Build the CLI: `cargo build --release`
 5. Add the built executable to your PATH:
-   - **Windows**: Copy it to a directory in your `Path`, like `C:\Windows\System32`.
-   - **Mac/Linux**: Copy it to `/usr/local/bin/` using: `sudo cp target/release/gpt /usr/local/bin/`.
+   - **Windows**: Copy it to a directory in your `Path`, like `C:\Windows\System32`
+   - **Mac/Linux**: Copy it to `/usr/local/bin/` using: `sudo cp target/release/gpt /usr/local/bin/`
 
 ### Using GPTCLI
 
 With GPTCLI installed, use it directly in your shell.
 
-- To chat with GPT 3.5 Turbo: `gpt What is the capital of California?`.
-- To chat with GPT 4: `gpt 4 What is the meaning of life?`.
-- For image analysis: `gpt v /path/to/image.jpg What colors are in this image?`.
+- To chat with GPT 3.5 Turbo: `gpt What is the capital of California?`
+- To chat with GPT 4: `gpt 4 What is the meaning of life?`
+- For image analysis: `gpt v /path/to/image.jpg What colors are in this image?`
 
 ## Licensing
 
