@@ -7,6 +7,7 @@ This command-line tool provides a simple interface for interacting with the foll
 - GPT-3.5 Turbo
 - GPT-4
 - GPT-4 Vision
+- DALL-E 3
 
 ## Prerequisites
 
@@ -34,7 +35,8 @@ With GPTCLI installed, use it directly in your shell.
 
 - To chat with GPT 3.5 Turbo: `gpt What is the capital of California?`
 - To chat with GPT 4: `gpt 4 What is the meaning of life?`
-- For image analysis: `gpt v /path/to/image.jpg What colors are in this image?`
+- For image analysis: `gpt v rust_astronaut.png What colors are in this image?`
+- To generate an image: `gpt d an astronaut in a rusty spacesuit on mars holding a crab`
 
 ## Licensing
 
