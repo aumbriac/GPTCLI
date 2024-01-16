@@ -16,8 +16,8 @@ This command-line tool provides a simple interface for interacting with the foll
 ### Obtain an OpenAI API Key
 
 1. Get an OpenAI API key from [https://openai.com/api/](https://openai.com/api/).
-2. Add the API key to your shell environment by appending this line to `~/.bashrc` (or `~/.bash_profile` on Mac): `export OPENAI_API_KEY=your-api-key`
-3. Apply the changes by restarting your shell or sourcing your profile: `source ~/.bashrc  # or source ~/.bash_profile on Mac`
+2. Add the API key to your shell environment by appending this line to `~/.bashrc`: `export OPENAI_API_KEY=your-api-key` (or `~/.zshrc` if using zsh)
+3. Apply the changes by restarting your shell or sourcing your profile: `source ~/.bashrc` (or `~/.zshrc` if using zsh)
 
 ## Installation Steps
 
@@ -33,10 +33,18 @@ This command-line tool provides a simple interface for interacting with the foll
 
 With GPTCLI installed, use it directly in your shell.
 
-- To chat with GPT 3.5 Turbo: `gpt What is the capital of California?`
-- To chat with GPT 4: `gpt 4 What is the meaning of life?`
-- For image analysis: `gpt v rust_astronaut.png What colors are in this image?`
+- To chat with GPT 3.5 Turbo: `gpt What is the capital of California`
+- To chat with GPT 4: `gpt 4 What is the meaning of life`
+- For image analysis: `gpt v rust_astronaut.png What colors are in this image`
 - To generate an image: `gpt d an astronaut in a rusty spacesuit on mars holding a crab`
+
+### Testing
+
+GPTCLI comes with a suite of automated tests to ensure its functionality.
+
+##### Running Tests
+
+To run all the tests, use the following command: `cargo test`
 
 ## Licensing
 
