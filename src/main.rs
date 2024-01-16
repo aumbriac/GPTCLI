@@ -1,10 +1,13 @@
 mod chat;
 mod constants;
 mod images;
+mod print_help;
+mod tests;
 mod utils;
 mod vision;
 
-use crate::utils::{print_help, process_command};
+use crate::print_help::print_help;
+use crate::utils::process_command;
 use std::{env, error::Error};
 
 #[tokio::main]
@@ -15,11 +18,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 || args.iter().any(|arg| arg == "-help" || arg == "-h") {
         print_help();
-        return if args.len() < 2 {
-            Err("Insufficient arguments".into())
-        } else {
-            Ok(())
-        };
+        return Ok(());
     }
 
     let client = reqwest::Client::builder()

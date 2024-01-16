@@ -1,14 +1,13 @@
 use crate::chat::{ChatApiResponse, ChatMessageRole, OpenAiChatRequestBody};
 use crate::constants::{
-    RequestType, DALLE_API_URL, DALLE_MODEL, DEFAULT_MODEL, DEFAULT_VISION_INSTRUCTIONS,
-    GPT4_MODEL, GPT4_VISION_MODEL, GPT_API_URL,
+    RequestType, CMD_DALLE, CMD_GPT4, CMD_VISION, DALLE_API_URL, DALLE_MODEL, DEFAULT_MODEL,
+    DEFAULT_VISION_INSTRUCTIONS, GPT4_MODEL, GPT4_VISION_MODEL, GPT_API_URL,
 };
 use crate::images::{DalleApiResponse, OpenAiDalleRequestBody};
 use crate::vision::{
     ImageUrl, OpenAiVisionRequestBody, VisionApiResponse, VisionContent, VisionMessageRole,
 };
 use base64;
-use colored::Colorize;
 use futures::stream::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::{
@@ -22,15 +21,15 @@ use std::{
     io::{self, Read, Write},
 };
 
-const CMD_VISION: &str = "v";
-const CMD_GPT4: &str = "4";
-const CMD_DALLE: &str = "d";
-
 pub fn build_headers() -> Result<HeaderMap, Box<dyn Error>> {
     let mut headers = HeaderMap::new();
     headers.insert(
         AUTHORIZATION,
-        HeaderValue::from_str(&format!("Bearer {}", env::var("OPENAI_API_KEY")?))?,
+        HeaderValue::from_str(&format!(
+            "Bearer {}",
+            env::var("OPENAI_API_KEY")
+                .map_err(|_| "OPENAI_API_KEY environment variable not found or invalid")?
+        ))?,
     );
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
     Ok(headers)
@@ -50,60 +49,16 @@ pub fn create_spinner(color: &str, message: String) -> ProgressBar {
 }
 
 pub async fn encode_image(image_path: &str) -> Result<String, Box<dyn Error>> {
-    let mut file = fs::File::open(image_path)?;
+    let mut file = fs::File::open(image_path)
+        .map_err(|_| format!("Failed to open image file: {}", image_path))?;
     let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
+    file.read_to_end(&mut buffer).map_err(|_| {
+        Box::new(io::Error::new(
+            io::ErrorKind::Other,
+            "Failed to read image file",
+        ))
+    })?;
     Ok(base64::encode(buffer))
-}
-
-pub fn print_help() {
-    println!("{:━^60}", " GPTCLI ".yellow());
-    println!("Usage:");
-    println!("  {} [option] <argument>", "gpt".bold().green());
-    println!("\nOptions:");
-    println!("  {}   GPT-3.5-Turbo (default for text prompts).", " ");
-    println!("  {}   GPT-4 model for text prompts.", "4".bold().cyan());
-    println!(
-        "  {}   GPT-4 Vision model for image analysis.",
-        "v".bold().magenta()
-    );
-    println!(
-        "  {}   DALL-E 3 model for image generation.",
-        "d".bold().red()
-    );
-    println!(
-        "  {}     Display this help message.",
-        "-h, -help".bold().blue()
-    );
-    println!("\nArguments:");
-    println!(
-        "  {}  A text prompt for GPT-3.5-Turbo.",
-        "<prompt>".bold().green()
-    );
-    println!("  {}  A text prompt for GPT-4.", "4 <prompt>".bold().cyan());
-    println!(
-        "  {}  A path to an image file and optional description for GPT-4 Vision.",
-        "v <image_path> [description]".bold().magenta()
-    );
-    println!(
-        "  {}  A text prompt for DALL-E 3.",
-        "d <prompt>".bold().red()
-    );
-    println!("\nExamples:");
-    println!(
-        "  {} What is the capital of California?",
-        "gpt".bold().green()
-    );
-    println!("  {} What is the meaning of life?", "gpt 4".bold().cyan());
-    println!(
-        "  {} rust_astronaut.jpg What colors are in this image?",
-        "gpt v".bold().magenta()
-    );
-    println!(
-        "  {} An astronaut on Mars in a rusty spacesuit holding a crab",
-        "gpt d".bold().red()
-    );
-    println!("{:━^60}", "".yellow());
 }
 
 pub async fn build_vision_request(
@@ -114,7 +69,9 @@ pub async fn build_vision_request(
     } else {
         DEFAULT_VISION_INSTRUCTIONS.to_string()
     };
-    let image_base64 = encode_image(&args[2]).await?;
+    let image_base64 = encode_image(&args[2])
+        .await
+        .map_err(|e| format!("Failed to encode image: {}", e))?;
     Ok(OpenAiVisionRequestBody {
         model: GPT4_VISION_MODEL.to_string(),
         messages: vec![VisionMessageRole {
@@ -173,20 +130,31 @@ pub async fn process_vision_response(response: reqwest::Response) -> Result<(), 
 
 pub async fn process_chat_response(response: reqwest::Response) -> Result<(), Box<dyn Error>> {
     let mut stream = response.bytes_stream();
+    let mut buffer = Vec::with_capacity(1024);
 
     while let Some(item) = stream.next().await {
         let chunk = item?;
-        let chunk_str = String::from_utf8(chunk.to_vec())?;
+        buffer.extend(chunk);
 
-        for line in chunk_str.split('\n') {
-            let line = line.trim_start_matches("data: ").trim();
+        let mut start = 0;
+        while let Some(end) = buffer[start..].iter().position(|&b| b == b'\n') {
+            let line = &buffer[start..start + end];
+            start += end + 1;
+
+            let line_str = std::str::from_utf8(line).map_err(|_| "Invalid UTF-8 in response")?;
+            let line = line_str.trim_start_matches("data: ").trim();
             if !line.is_empty() {
                 match serde_json::from_str::<ChatApiResponse>(line) {
                     Ok(api_response) => {
                         for choice in api_response.choices {
                             if let Some(content) = choice.delta.content {
                                 print!("{}", content);
-                                io::stdout().flush().unwrap();
+                                io::stdout().flush().map_err(|e| {
+                                    io::Error::new(
+                                        io::ErrorKind::Other,
+                                        format!("Failed to flush stdout: {}", e),
+                                    )
+                                })?;
                             }
                         }
                     }
@@ -194,6 +162,7 @@ pub async fn process_chat_response(response: reqwest::Response) -> Result<(), Bo
                 }
             }
         }
+        buffer.drain(0..start);
     }
     println!();
     Ok(())
@@ -242,32 +211,19 @@ pub async fn make_openai_request(
     };
     let spinner = create_spinner(spinner_color, "Processing request...".to_string());
 
-    let response = match &request_type {
-        RequestType::Chat(request_body) => {
-            client
-                .post(api_url)
-                .headers(headers)
-                .json(request_body)
-                .send()
-                .await?
-        }
-        RequestType::Vision(request_body) => {
-            client
-                .post(api_url)
-                .headers(headers)
-                .json(request_body)
-                .send()
-                .await?
-        }
-        RequestType::Dalle(request_body) => {
-            client
-                .post(api_url)
-                .headers(headers)
-                .json(request_body)
-                .send()
-                .await?
-        }
+    let request_body = match &request_type {
+        RequestType::Chat(body) => serde_json::to_value(body)?,
+        RequestType::Vision(body) => serde_json::to_value(body)?,
+        RequestType::Dalle(body) => serde_json::to_value(body)?,
     };
+
+    let response = client
+        .post(api_url)
+        .headers(headers)
+        .json(&request_body)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to send request to OpenAI: {}", e))?;
 
     spinner.finish_and_clear();
 
@@ -292,7 +248,9 @@ pub async fn process_command(
     client: &reqwest::Client,
     args: &[String],
 ) -> Result<(), Box<dyn Error>> {
-    let (request_type, api_url) = create_request_type_and_url(args).await?;
+    let (request_type, api_url) = create_request_type_and_url(args)
+        .await
+        .map_err(|e| format!("Failed to create request: {}", e))?;
 
     make_openai_request(client, request_type, api_url).await
 }
